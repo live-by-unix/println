@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PrintLN - Bash CLI Print Tool</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background: #f9f9f9; color: #333; }
+    header { background: #222; color: #fff; padding: 20px; text-align: center; }
+    header h1 { margin: 0; }
+    section { padding: 20px; max-width: 900px; margin: auto; }
+    h2 { border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+    pre, code { background: #eee; padding: 5px; border-radius: 4px; }
+    .summary { background: #fff; border: 1px solid #ddd; padding: 15px; margin: 20px 0; border-radius: 6px; }
+    footer { background: #222; color: #fff; text-align: center; padding: 10px; margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PrintLN - Bash CLI Print Tool</h1>
+    <p>A lightweight, production-ready Bash CLI tool for printing documents interactively</p>
+  </header>
+
+  <section>
+    <h2>Why PrintLN?</h2>
+    <p>PrintLN was created to simplify printing from the command line. No Node.js dependencies, no bloated frameworks — just pure Bash and CUPS integration. It’s designed to be lightweight, cross-platform, and user-friendly.</p>
+  </section>
+
+  <section>
+    <h2>Features</h2>
+    <ul>
+      <li>🖨️ System Printer Integration via CUPS</li>
+      <li>📄 Multiple File Formats: PDF, TXT, MD, CSV, DOCX, PNG, JPEG</li>
+      <li>🎨 Color Mode Selection</li>
+      <li>✅ Interactive Workflow with confirmations</li>
+      <li>🚀 Lightweight pure Bash implementation</li>
+      <li>💻 Works on macOS, Linux, Unix</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Requirements</h2>
+    <ul>
+      <li>Bash 4.0+</li>
+      <li>CUPS installed and configured</li>
+      <li><code>lp</code> and <code>lpstat</code> utilities</li>
+      <li><code>bc</code> for calculations</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Installation</h2>
+    <pre><code># Clone the repository
+git clone https://github.com/live-by-unix/println.git
+cd println
+
+# Make the script executable
+chmod +x println
+
+# Optional: Install globally
+sudo cp println /usr/local/bin/println
+</code></pre>
+    <p>If you don’t have sudo, add an alias in <code>~/.bashrc</code> or <code>~/.zshrc</code>:</p>
+    <pre><code>alias println="/path/to/your/println"</code></pre>
+  </section>
+
+  <section>
+    <h2>Usage</h2>
+    <p>Basic commands:</p>
+    <pre><code>println -v        # Show version
+println -h        # Show help
+println print     # Start interactive workflow</code></pre>
+  </section>
+
+  <section>
+    <h2>Interactive Workflow</h2>
+    <div class="summary">
+      <p><strong>Step 1:</strong> Select Printer</p>
+      <p><strong>Step 2:</strong> Enter File Path</p>
+      <p><strong>Step 3:</strong> Select Color Mode</p>
+      <p><strong>Step 4:</strong> Review Summary</p>
+      <p><strong>Step 5:</strong> Confirm & Submit</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Troubleshooting</h2>
+    <ul>
+      <li><strong>No printers found:</strong> Ensure CUPS is installed and running.</li>
+      <li><strong>No such file or directory:</strong> Use absolute paths and check permissions.</li>
+      <li><strong>Unsupported file type:</strong> Verify extension is one of PDF, TXT, MD, CSV, DOCX, PNG, JPEG.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>License</h2>
+    <p>This project is licensed under the BSD 3-Clause License. See the LICENSE file for details.</p>
+  </section>
+
+  <footer>
+    <p>Made with ❤️ by live-by-unix</p>
+    <p><a href="https://github.com/live-by-unix/println" style="color:#fff;">GitHub Repository</a></p>
+  </footer>
+</body>
+</html>

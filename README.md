@@ -2,6 +2,8 @@
 
 A lightweight, production-ready Bash CLI tool for printing documents to network and local printers with an interactive workflow. No Node.js dependencies required!
 
+  <img width="1264" height="1264" alt="printlnlogo" src="https://github.com/user-attachments/assets/8549e47a-0d4f-4db1-82f7-a6755e6ba36a" />
+
 ## Features
 
 - 🖨️ **System Printer Integration** - Automatically detects available printers via CUPS

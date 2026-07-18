@@ -1,0 +1,262 @@
+#!/bin/bash
+
+##############################################################################
+# PrintLN - Bash CLI Print Tool (Bash Implementation)
+# A lightweight CLI tool for printing documents to network printers
+# with an interactive workflow
+##############################################################################
+
+set -euo pipefail
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Supported file types
+SUPPORTED_TYPES=("pdf" "txt" "md" "csv" "docx" "png" "jpeg" "jpg")
+VERSION="1.0.0"
+
+##############################################################################
+# Helper Functions
+##############################################################################
+
+# Display error message and exit
+error() {
+  echo -e "${RED}❌ $1${NC}" >&2
+  exit 1
+}
+
+# Display success message
+success() {
+  echo -e "${GREEN}✅ $1${NC}"
+}
+
+# Display info message
+info() {
+  echo -e "${BLUE}ℹ️  $1${NC}"
+}
+
+# Display warning message
+warning() {
+  echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+# Get list of available printers
+get_printers() {
+  if command -v lpstat &> /dev/null; then
+    lpstat -p -d 2>/dev/null | grep "printer" | awk '{print $2}' | sed 's/@.*//' | sort
+  elif command -v lpadmin &> /dev/null; then
+    lpstat -p 2>/dev/null | awk '{print $2}' | sed 's/@.*//'
+  else
+    return 1
+  fi
+}
+
+# Validate file exists and has supported type
+validate_file() {
+  local file_path=$1
+  
+  if [[ ! -f "$file_path" ]]; then
+    error "File not found: $file_path"
+  fi
+  
+  local extension="${file_path##*.}"
+  extension="${extension,,}"  # Convert to lowercase
+  
+  local supported=false
+  for type in "${SUPPORTED_TYPES[@]}"; do
+    if [[ "$type" == "$extension" ]]; then
+      supported=true
+      break
+    fi
+  done
+  
+  if [[ "$supported" == false ]]; then
+    error "Unsupported file type: .$extension. Supported types: $(IFS=', '; echo "${SUPPORTED_TYPES[*]}")"
+  fi
+}
+
+# Get file size in KB
+get_file_size() {
+  local file_path=$1
+  local size_bytes=$(stat -f%z "$file_path" 2>/dev/null || stat -c%s "$file_path" 2>/dev/null || echo 0)
+  echo "scale=2; $size_bytes / 1024" | bc
+}
+
+# Show help information
+show_help() {
+  cat << EOF
+PrintLN - Bash CLI Print Tool v$VERSION
+
+Usage:
+  println [command] [options]
+
+Commands:
+  print              Start interactive print workflow
+  help, -h, --help   Show this help message
+  version, -v, --version  Show version information
+
+Examples:
+  println print              # Start interactive workflow
+  println -v                 # Show version
+  println help               # Show help
+
+Supported File Types:
+  PDF, TXT, MD, CSV, DOCX, PNG, JPEG
+
+Interactive Workflow:
+  1. Select printer from available system printers
+  2. Enter absolute file path to print
+  3. Choose color mode (Black & White or Color)
+  4. Review print job summary
+  5. Confirm to submit print job
+
+For more information, visit: https://github.com/live-by-unix/println
+EOF
+}
+
+##############################################################################
+# Interactive Print Workflow
+##############################################################################
+
+interactive_print() {
+  echo ""
+  info "Scanning for available printers..."
+  echo ""
+  
+  # Step 1: Get available printers
+  local printers_list
+  if ! printers_list=$(get_printers); then
+    error "No printers found on the system. Ensure CUPS is installed and configured."
+  fi
+  
+  if [[ -z "$printers_list" ]]; then
+    error "No printers found on the system."
+  fi
+  
+  # Step 2: Display printers and get selection
+  local printer_array=()
+  local index=1
+  
+  while IFS= read -r printer; do
+    printer_array+=("$printer")
+    echo "  $index. $printer"
+    ((index++))
+  done <<< "$printers_list"
+  
+  echo ""
+  read -p "Select a printer (enter number): " printer_choice
+  
+  if ! [[ "$printer_choice" =~ ^[0-9]+$ ]] || [ "$printer_choice" -lt 1 ] || [ "$printer_choice" -gt "${#printer_array[@]}" ]; then
+    error "Invalid selection. Please enter a number between 1 and ${#printer_array[@]}"
+  fi
+  
+  local selected_printer="${printer_array[$((printer_choice - 1))]}"
+  echo ""
+  success "Selected printer: $selected_printer"
+  echo ""
+  
+  # Step 3: Get file path
+  read -p "Enter absolute path of file to print: " file_path
+  
+  if [[ -z "$file_path" ]]; then
+    error "File path cannot be empty."
+  fi
+  
+  validate_file "$file_path"
+  success "File validated: $(basename "$file_path")"
+  echo ""
+  
+  # Step 4: Get color mode
+  echo "Select color mode:"
+  echo "  1. Black & White"
+  echo "  2. Color"
+  echo ""
+  read -p "Enter choice (1 or 2): " color_choice
+  
+  if [[ ! "$color_choice" =~ ^[1-2]$ ]]; then
+    error "Invalid selection. Please enter 1 or 2."
+  fi
+  
+  local color_mode="bw"
+  local color_mode_display="Black & White"
+  if [[ "$color_choice" == "2" ]]; then
+    color_mode="color"
+    color_mode_display="Color"
+  fi
+  echo ""
+  success "Selected color mode: $color_mode_display"
+  echo ""
+  
+  # Step 5: Show summary
+  local file_size=$(get_file_size "$file_path")
+  
+  echo "📋 Print Job Summary:"
+  echo "$(printf '─%.0s' {1..50})"
+  echo "Printer:     $selected_printer"
+  echo "File Path:   $file_path"
+  echo "File Name:   $(basename "$file_path")"
+  echo "File Size:   ${file_size} KB"
+  echo "Color Mode:  $color_mode_display"
+  echo "$(printf '─%.0s' {1..50})"
+  echo ""
+  
+  # Step 6: Confirmation
+  read -p "Proceed with print job? (y/N): " confirm
+  
+  if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    echo ""
+    echo -e "${RED}❌ Print job cancelled.${NC}"
+    exit 0
+  fi
+  
+  # Step 7: Submit print job
+  echo ""
+  info "Submitting print job..."
+  
+  local lp_options=""
+  if [[ "$color_mode" == "bw" ]]; then
+    lp_options="-o sides=two-sided-long-edge -o media=A4"
+  else
+    lp_options="-o sides=two-sided-long-edge -o media=A4 -o print-color-mode=color"
+  fi
+  
+  if lp $lp_options -d "$selected_printer" "$file_path" 2>/dev/null; then
+    echo ""
+    success "Print job submitted successfully!"
+    echo "📌 Printer: $selected_printer"
+    echo "📄 File: $(basename "$file_path")"
+    echo ""
+  else
+    error "Failed to submit print job. Check printer status and try again."
+  fi
+}
+
+##############################################################################
+# Main Script Logic
+##############################################################################
+
+main() {
+  case "${1:-}" in
+    print)
+      interactive_print
+      ;;
+    help|-h|--help)
+      show_help
+      ;;
+    version|-v|--version)
+      echo "println v$VERSION"
+      ;;
+    "")
+      show_help
+      ;;
+    *)
+      error "Unknown command: $1. Use 'println help' for usage information."
+      ;;
+  esac
+}
+
+main "$@"

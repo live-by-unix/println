@@ -1,6 +1,6 @@
 # PrintLN - Bash CLI Print Tool
 
-A lightweight, production-ready Bash CLI tool for printing documents to network and local printers with an interactive workflow. No Node.js dependencies required!
+A lightweight, production-ready Bash CLI tool for printing documents to network and local printers with an interactive workflow and non-interactive mode. No Node.js dependencies required!
 
   <img width="1264" height="1264" alt="printlnlogo" src="https://github.com/user-attachments/assets/8549e47a-0d4f-4db1-82f7-a6755e6ba36a" />
 
@@ -9,7 +9,8 @@ A lightweight, production-ready Bash CLI tool for printing documents to network 
 - 🖨️ **System Printer Integration** - Automatically detects available printers via CUPS
 - 📄 **Multiple File Formats** - Supports PDF, TXT, MD, CSV, DOCX, PNG, and JPEG
 - 🎨 **Color Mode Selection** - Choose between Black & White and Color printing
-- ✅ **Interactive Workflow** - User-friendly prompts and confirmations
+- 📑 **Advanced Print Options** - Duplex modes, collation, paper size selection
+- ✅ **Interactive & Non-Interactive Modes** - Choose your workflow
 - 🚀 **Lightweight** - Pure Bash, no external dependencies
 - 💻 **Cross-Platform** - Works on macOS, Linux, and Unix systems
 
@@ -22,6 +23,7 @@ A lightweight, production-ready Bash CLI tool for printing documents to network 
 - `bc` for calculations (standard on most systems)
 
 ## Installation 
+
 ```bash
 # Clone the repository
 git clone https://github.com/live-by-unix/println.git
@@ -31,29 +33,19 @@ cd println
 chmod +x println
 
 # Optional: Install globally
-sudo cp println /usr/local/bin/println # Do this IN the println dir.
+sudo cp println /usr/local/bin/println
 ```
-If you want to use it as a command but don't have sudo, go to your `./bashrc` or `./zshrc` and put this:
 
-```bash
-alias println="/path/to/your/println"
-``````bash
-# Clone the repository
-git clone https://github.com/live-by-unix/println.git
-cd println
-
-# Make the script executable
-chmod +x println
-
-# Optional: Install globally
-sudo cp println /usr/local/bin/println # Do this IN the println dir.
-```
-If you want to use it as a command but don't have sudo, go to your `./bashrc` or `./zshrc` and put this:
+If you want to use it as a command but don't have sudo, add this to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
 alias println="/path/to/your/println"
 ```
-If you prefer to clone a release go ahead.   
+
+Then reload your shell:
+```bash
+source ~/.bashrc  # or source ~/.zshrc
+```
 
 ### Verify Installation
 
@@ -62,7 +54,7 @@ If you prefer to clone a release go ahead.
 println -v
 
 # Output:
-# println v1.0.0
+# println v3.0.0
 ```
 
 ## Usage
@@ -88,6 +80,11 @@ println --help
 Start interactive print workflow:
 ```bash
 println print
+```
+
+Start non-interactive print job:
+```bash
+println print --no-interactive [OPTIONS]
 ```
 
 ## Interactive Workflow
@@ -125,19 +122,80 @@ Enter choice (1 or 2): 1
 ✅ Selected color mode: Black & White
 ```
 
-### Step 4: Review Summary
+### Step 4: Select Duplex Mode
+```
+Select duplex mode:
+  1. Single-sided
+  2. Double-sided (long-edge)
+  3. Double-sided (short-edge)
+
+Enter choice (1, 2, or 3): 2
+
+✅ Selected duplex mode: Double-sided (long-edge)
+```
+
+### Step 5: Select Paper Size
+```
+Select paper size:
+  1. Letter
+  2. Legal
+  3. A4
+  4. A3
+  5. A5
+  6. Tabloid
+
+Enter choice (1-6): 3
+
+✅ Selected paper size: A4
+```
+
+### Step 6: Select Collate Option
+```
+Collate pages?
+  1. Yes
+  2. No
+
+Enter choice (1 or 2): 1
+
+✅ Selected collate: Yes
+```
+
+### Step 7: Select Both Sides Option
+```
+Print on both sides?
+  1. Yes
+  2. No
+
+Enter choice (1 or 2): 1
+
+✅ Selected both sides: Yes
+```
+
+### Step 8: Enter Number of Copies
+```
+Enter number of copies: 2
+
+✅ Selected copies: 2
+```
+
+### Step 9: Review Summary
 ```
 📋 Print Job Summary:
 ──────────────────────────────────────────────
-Printer:     Brother_HL_L8360CDW
-File Path:   /Users/john/documents/report.pdf
-File Name:   report.pdf
-File Size:   245.32 KB
-Color Mode:  Black & White
+Printer:       Brother_HL_L8360CDW
+File Path:     /Users/john/documents/report.pdf
+File Name:     report.pdf
+File Size:     245.32 KB
+Color Mode:    Black & White
+Duplex Mode:   Double-sided (long-edge)
+Paper Size:    A4
+Collate:       Yes
+Both Sides:    Yes
+Copies:        2
 ──────────────────────────────────────────────
 ```
 
-### Step 5: Confirm & Submit
+### Step 10: Confirm & Submit
 ```
 Proceed with print job? (y/N): y
 
@@ -146,6 +204,81 @@ Proceed with print job? (y/N): y
 ✅ Print job submitted successfully!
 📌 Printer: Brother_HL_L8360CDW
 📄 File: report.pdf
+📋 Copies: 2
+🔄 Duplex: Double-sided (long-edge)
+📑 Collate: Yes
+```
+
+## Non-Interactive Mode
+
+Non-interactive mode allows you to specify all print options directly via command-line arguments, perfect for automation, scripts, and CI/CD pipelines.
+
+### Syntax
+
+```bash
+println print --no-interactive [OPTIONS]
+```
+
+### Required Options
+
+- `-p, --printer <name>` - Printer name (must be available on system)
+- `-f, --file <path>` - Absolute file path to print
+
+### Optional Options
+
+- `-c, --color <mode>` - Color mode: `bw` (default) or `color`
+- `-d, --duplex <mode>` - Duplex mode: `one-sided`, `long-edge` (default), or `short-edge`
+- `-n, --copies <number>` - Number of copies (default: 1)
+- `-s, --paper-size <number>` - Paper size number (default: 3 for A4):
+  - `1` = Letter
+  - `2` = Legal
+  - `3` = A4
+  - `4` = A3
+  - `5` = A5
+  - `6` = Tabloid
+- `--collate <yes|no>` - Collate pages (default: yes)
+- `--both-sides <yes|no>` - Print on both sides (default: yes)
+
+### Non-Interactive Examples
+
+**Example 1: Simple Color Print**
+```bash
+println print --no-interactive -p "Office_Printer" -f "/home/user/report.pdf" -c color
+```
+
+**Example 2: Multi-Copy with Custom Paper Size**
+```bash
+println print --no-interactive -p "HP_LaserJet" -f "/home/user/document.pdf" -n 3 -s 2
+# Prints 3 copies on Legal-sized paper
+```
+
+**Example 3: No Collation, Single-Sided**
+```bash
+println print --no-interactive -p "Brother" -f "/home/user/file.pdf" --collate no --both-sides no
+```
+
+**Example 4: Double-Sided Short-Edge with Custom Settings**
+```bash
+println print --no-interactive -p "Canon" -f "/home/user/image.png" -d short-edge -n 2 -c color --collate yes
+```
+
+**Example 5: A3 Paper, Color, 5 Copies**
+```bash
+println print --no-interactive -p "Office_Printer" -f "/home/user/poster.pdf" -s 4 -c color -n 5
+```
+
+**Example 6: Automation Script - Batch Print Multiple Files**
+```bash
+#!/bin/bash
+for file in /path/to/documents/*.pdf; do
+  println print --no-interactive \
+    -p "Office_Printer" \
+    -f "$file" \
+    -c bw \
+    -n 1 \
+    --collate yes \
+    --both-sides yes
+done
 ```
 
 ## Supported File Types
@@ -153,63 +286,20 @@ Proceed with print job? (y/N): y
 - **Documents**: PDF, TXT, MD (Markdown), CSV, DOCX (Word)
 - **Images**: PNG, JPEG
 
-## Examples
+## Supported Paper Sizes
 
-### Print a PDF in Black & White
-```bash
-$ println print
-ℹ️  Scanning for available printers...
+- Letter (8.5" × 11")
+- Legal (8.5" × 14")
+- A4 (210mm × 297mm) - Default
+- A3 (297mm × 420mm)
+- A5 (148mm × 210mm)
+- Tabloid (11" × 17")
 
-  1. Office_Printer
-  2. Personal_Printer
+## Supported Duplex Modes
 
-Select a printer (enter number): 1
-✅ Selected printer: Office_Printer
-
-Enter absolute path of file to print: /home/user/report.pdf
-✅ File validated: report.pdf
-
-Select color mode:
-  1. Black & White
-  2. Color
-
-Enter choice (1 or 2): 1
-✅ Selected color mode: Black & White
-
-📋 Print Job Summary:
-──────────────────────────────────────────────
-Printer:     Office_Printer
-File Path:   /home/user/report.pdf
-File Name:   report.pdf
-File Size:   512.45 KB
-Color Mode:  Black & White
-──────────────────────────────────────────────
-
-Proceed with print job? (y/N): y
-
-ℹ️  Submitting print job...
-
-✅ Print job submitted successfully!
-📌 Printer: Office_Printer
-📄 File: report.pdf
-```
-
-### Print an Image in Color
-```bash
-$ println print
-# ... follow the prompts ...
-# Select color mode: 2 (Color)
-# ... confirm and print ...
-```
-
-### Cancel a Print Job
-```bash
-$ println print
-# ... follow the prompts ...
-Proceed with print job? (y/N): n
-
-❌ Print job cancelled.
-```
+- **Single-sided** - Prints on one side only
+- **Double-sided (long-edge)** - Default binding on long edge
+- **Double-sided (short-edge)** - Binding on short edge
 
 ## Troubleshooting
 
@@ -232,6 +322,12 @@ Proceed with print job? (y/N): n
 - Ensure file is not corrupted
 - Check file extension is lowercase
 
+### "Printer not found" in non-interactive mode
+**Solution:**
+- Verify the printer name exactly matches system printer names
+- List available printers: `lpstat -p -d`
+- Use the exact printer name in the command (case-sensitive)
+
 ### Print job fails to submit
 **Solution:**
 - Verify printer is online: `lpstat -p -d`
@@ -239,9 +335,9 @@ Proceed with print job? (y/N): n
 - Ensure you have permission to print to the selected printer
 - Try printing a test page: `lp -d printer_name /etc/hosts`
 
-## Advanced: Viewing Print Queue
+## Advanced: Viewing & Managing Print Queue
 
-To check the status of print jobs:
+Check the status of print jobs:
 ```bash
 # View all jobs
 lpstat -o
@@ -251,7 +347,78 @@ lpstat -o -d printer_name
 
 # Cancel a print job
 cancel job_id
+
+# Cancel all jobs for a printer
+cancel -P printer_name
 ```
+
+## Installation Updates & Maintenance
+
+### Updating PrintLN
+
+If you installed PrintLN globally with `sudo cp`:
+
+```bash
+# Navigate to your println repository directory
+cd /path/to/println
+
+# Pull the latest changes
+git pull origin main
+
+# Update the global installation
+sudo cp println /usr/local/bin/println
+
+# Verify the update
+println -v
+```
+
+If you used an alias instead:
+
+```bash
+# Navigate to your println repository directory
+cd /path/to/println
+
+# Pull the latest changes
+git pull origin main
+
+# The alias automatically points to the updated version
+# Verify the update
+println -v
+```
+
+### Uninstalling PrintLN
+
+**If installed globally:**
+
+```bash
+# Remove from /usr/local/bin
+sudo rm /usr/local/bin/println
+
+# Optionally, remove the cloned repository
+rm -rf /path/to/println
+```
+
+**If using an alias:**
+
+```bash
+# Remove the alias from ~/.bashrc or ~/.zshrc
+# Edit the file and delete this line:
+# alias println="/path/to/your/println"
+
+# Then reload your shell
+source ~/.bashrc  # or source ~/.zshrc
+
+# Optionally, remove the cloned repository
+rm -rf /path/to/println
+```
+
+**Remove logs (optional):**
+
+```bash
+# Remove all PrintLN logs
+rm -rf ~/println_logs
+```
+Then reinstall. 
 
 ## Architecture
 
@@ -265,17 +432,20 @@ cancel job_id
 1. **Printer Detection** - Uses `lpstat` to list available printers
 2. **File Validation** - Checks file existence and supported type
 3. **Interactive Prompts** - Simple `read` commands for user input
-4. **Print Submission** - Uses `lp` command with CUPS options
-5. **Error Handling** - Comprehensive validation and user feedback
+4. **Non-Interactive Processing** - Argument parsing for automated workflows
+5. **Print Submission** - Uses `lp` command with CUPS options
+6. **Error Handling** - Comprehensive validation and user feedback
+7. **Logging** - Error logs stored in `~/println_logs/`
 
 ## Configuration
 
 PrintLN uses system printer settings by default. Print jobs are submitted with:
-- **Media**: A4 (standard)
-- **Sides**: Two-sided long-edge (duplex)
-- **Color**: User-selected (Black & White or Color)
+- **Media**: User-selected paper size (default: A4)
+- **Sides**: User-selected duplex mode (default: Two-sided long-edge)
+- **Color**: User-selected color mode (default: Black & White)
+- **Collate**: User-selected collation (default: Enabled)
 
-To customize print options, edit the `lp_options` variable in the `println` script.
+To customize print options, edit the `lp_options` variable in the `println` script or use command-line options in non-interactive mode.
 
 ## License
 

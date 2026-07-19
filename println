@@ -3,8 +3,8 @@
 ##############################################################################
 # PrintLN - Bash CLI Print Tool (Bash Implementation)
 # A lightweight CLI tool for printing documents to network printers
-# with an interactive workflow
-# Version: 2.0.0 - With duplex, copies, and error logging
+# with an interactive workflow and non-interactive mode
+# Version: 3.0.0 - With duplex, copies, collate, paper sizes, and non-interactive mode
 ##############################################################################
 
 set -euo pipefail
@@ -18,7 +18,18 @@ NC='\033[0m' # No Color
 
 # Supported file types
 SUPPORTED_TYPES=("pdf" "txt" "md" "csv" "docx" "png" "jpeg" "jpg")
-VERSION="2.0.0"
+
+# Paper sizes
+declare -A PAPER_SIZES=(
+  [1]="Letter"
+  [2]="Legal"
+  [3]="A4"
+  [4]="A3"
+  [5]="A5"
+  [6]="Tabloid"
+)
+
+VERSION="3.0.0"
 LOG_DIR="${HOME}/println_logs"
 
 ##############################################################################
@@ -114,13 +125,42 @@ Usage:
 
 Commands:
   print              Start interactive print workflow
+  print --no-interactive [OPTIONS]  Run print job without interactive prompts
   help, -h, --help   Show this help message
   version, -v, --version  Show version information
 
+Non-Interactive Mode Options:
+  Required:
+    -p, --printer <name>           Printer name (must be available on system)
+    -f, --file <path>              Absolute file path to print
+
+  Optional:
+    -c, --color <mode>             Color mode: 'bw' (default) or 'color'
+    -d, --duplex <mode>            Duplex mode: 'one-sided', 'long-edge' (default), 'short-edge'
+    -n, --copies <number>          Number of copies (default: 1)
+    -s, --paper-size <number>      Paper size number (default: 3 for A4):
+                                   1=Letter, 2=Legal, 3=A4, 4=A3, 5=A5, 6=Tabloid
+    --collate <yes|no>             Collate pages: 'yes' (default) or 'no'
+    --both-sides <yes|no>          Print on both sides: 'yes' (default) or 'no'
+
 Examples:
-  println print              # Start interactive workflow
-  println -v                 # Show version
-  println help               # Show help
+  println print
+    # Start interactive workflow
+
+  println print --no-interactive -p "Office_Printer" -f "/home/user/report.pdf" -c color -n 2
+    # Print report.pdf in color with 2 copies
+
+  println print --no-interactive -p "HP_LaserJet" -f "/home/user/document.pdf" -s 2 --collate no
+    # Print document on legal paper without collation
+
+  println print --no-interactive -p "Brother" -f "/home/user/image.png" -d short-edge -n 3 --both-sides no
+    # Print image 3 times, double-sided short-edge, single-sided
+
+  println -v
+    # Show version
+
+  println help
+    # Show this help message
 
 Supported File Types:
   PDF, TXT, MD, CSV, DOCX, PNG, JPEG
@@ -130,12 +170,202 @@ Interactive Workflow:
   2. Enter absolute file path to print
   3. Choose color mode (Black & White or Color)
   4. Select duplex mode (Single-sided, Double-sided long-edge, Double-sided short-edge)
-  5. Enter number of copies
-  6. Review print job summary
-  7. Confirm to submit print job
+  5. Select paper size (Letter, Legal, A4, A3, A5, Tabloid)
+  6. Select collate option (Yes or No)
+  7. Select both sides option (Yes or No)
+  8. Enter number of copies
+  9. Review print job summary
+  10. Confirm to submit print job
 
 For more information, visit: https://github.com/live-by-unix/println
 EOF
+}
+
+##############################################################################
+# Non-Interactive Print Job
+##############################################################################
+
+non_interactive_print() {
+  local printer=""
+  local file_path=""
+  local color_mode="bw"
+  local duplex_mode="two-sided-long-edge"
+  local copies=1
+  local paper_size="A4"
+  local collate="yes"
+  local both_sides="yes"
+
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -p|--printer)
+        printer="$2"
+        shift 2
+        ;;
+      -f|--file)
+        file_path="$2"
+        shift 2
+        ;;
+      -c|--color)
+        if [[ "$2" == "bw" ]] || [[ "$2" == "color" ]]; then
+          color_mode="$2"
+          shift 2
+        else
+          error "Invalid color mode: $2. Use 'bw' or 'color'."
+        fi
+        ;;
+      -d|--duplex)
+        case "$2" in
+          one-sided)
+            duplex_mode="one-sided"
+            shift 2
+            ;;
+          long-edge)
+            duplex_mode="two-sided-long-edge"
+            shift 2
+            ;;
+          short-edge)
+            duplex_mode="two-sided-short-edge"
+            shift 2
+            ;;
+          *)
+            error "Invalid duplex mode: $2. Use 'one-sided', 'long-edge', or 'short-edge'."
+            ;;
+        esac
+        ;;
+      -n|--copies)
+        if ! [[ "$2" =~ ^[0-9]+$ ]] || [ "$2" -lt 1 ]; then
+          error "Invalid number of copies: $2. Must be a positive integer."
+        fi
+        copies="$2"
+        shift 2
+        ;;
+      -s|--paper-size)
+        if [[ -z "${PAPER_SIZES[$2]:-}" ]]; then
+          error "Invalid paper size number: $2. Valid sizes: 1=Letter, 2=Legal, 3=A4, 4=A3, 5=A5, 6=Tabloid"
+        fi
+        paper_size="${PAPER_SIZES[$2]}"
+        shift 2
+        ;;
+      --collate)
+        if [[ "$2" == "yes" ]] || [[ "$2" == "no" ]]; then
+          collate="$2"
+          shift 2
+        else
+          error "Invalid collate option: $2. Use 'yes' or 'no'."
+        fi
+        ;;
+      --both-sides)
+        if [[ "$2" == "yes" ]] || [[ "$2" == "no" ]]; then
+          both_sides="$2"
+          shift 2
+        else
+          error "Invalid both-sides option: $2. Use 'yes' or 'no'."
+        fi
+        ;;
+      *)
+        error "Unknown option: $1"
+        ;;
+    esac
+  done
+
+  # Validate required parameters
+  if [[ -z "$printer" ]]; then
+    error "Missing required argument: -p, --printer"
+  fi
+  if [[ -z "$file_path" ]]; then
+    error "Missing required argument: -f, --file"
+  fi
+
+  # Validate file
+  validate_file "$file_path"
+
+  # Verify printer exists
+  local printers_list
+  if ! printers_list=$(get_printers); then
+    error "No printers found on the system. Ensure CUPS is installed and configured."
+  fi
+
+  if ! echo "$printers_list" | grep -q "^${printer}$"; then
+    error "Printer not found: $printer. Available printers: $(echo "$printers_list" | tr '\n' ', ' | sed 's/,$//')"
+  fi
+
+  # Determine duplex mode display
+  local duplex_mode_display="Single-sided"
+  local duplex_option="one-sided"
+  
+  if [[ "$duplex_mode" == "two-sided-long-edge" ]]; then
+    duplex_mode_display="Double-sided (long-edge)"
+    duplex_option="two-sided-long-edge"
+  elif [[ "$duplex_mode" == "two-sided-short-edge" ]]; then
+    duplex_mode_display="Double-sided (short-edge)"
+    duplex_option="two-sided-short-edge"
+  fi
+
+  # If both_sides is "no", override to one-sided
+  if [[ "$both_sides" == "no" ]]; then
+    duplex_option="one-sided"
+    duplex_mode_display="Single-sided"
+  fi
+
+  # Determine color display
+  local color_mode_display="Black & White"
+  [[ "$color_mode" == "color" ]] && color_mode_display="Color"
+
+  # Collate display
+  local collate_display="Yes"
+  [[ "$collate" == "no" ]] && collate_display="No"
+
+  # Get file size
+  local file_size=$(get_file_size "$file_path")
+
+  # Show summary
+  echo ""
+  echo "📋 Print Job Summary:"
+  echo "$(printf '─%.0s' {1..50})"
+  echo "Printer:       $printer"
+  echo "File Path:     $file_path"
+  echo "File Name:     $(basename "$file_path")"
+  echo "File Size:     ${file_size} KB"
+  echo "Color Mode:    $color_mode_display"
+  echo "Duplex Mode:   $duplex_mode_display"
+  echo "Paper Size:    $paper_size"
+  echo "Collate:       $collate_display"
+  echo "Copies:        $copies"
+  echo "$(printf '─%.0s' {1..50})"
+  echo ""
+
+  # Submit print job
+  info "Submitting print job..."
+
+  local lp_options="-o sides=${duplex_option} -o media=${paper_size}"
+  
+  if [[ "$color_mode" == "color" ]]; then
+    lp_options="${lp_options} -o print-color-mode=color"
+  fi
+
+  if [[ "$collate" == "yes" ]]; then
+    lp_options="${lp_options} -o collate=true"
+  else
+    lp_options="${lp_options} -o collate=false"
+  fi
+
+  lp_options="${lp_options} -n ${copies}"
+
+  if lp $lp_options -d "$printer" "$file_path" 2>/dev/null; then
+    echo ""
+    success "Print job submitted successfully!"
+    echo "📌 Printer: $printer"
+    echo "📄 File: $(basename "$file_path")"
+    echo "📋 Copies: $copies"
+    echo "🔄 Duplex: $duplex_mode_display"
+    echo "📑 Collate: $collate_display"
+    echo ""
+  else
+    local error_msg="Failed to submit print job for file: $(basename "$file_path") to printer: $printer. Duplex: $duplex_mode_display, Copies: $copies, Color: $color_mode_display, Collate: $collate_display"
+    log_error "$error_msg"
+    error "Failed to submit print job. Check printer status and try again. Error logged to $LOG_DIR"
+  fi
 }
 
 ##############################################################################
@@ -211,7 +441,7 @@ interactive_print() {
   success "Selected color mode: $color_mode_display"
   echo ""
   
-  # Step 5: Get duplex mode (NEW)
+  # Step 5: Get duplex mode
   echo "Select duplex mode:"
   echo "  1. Single-sided"
   echo "  2. Double-sided (long-edge)"
@@ -236,7 +466,72 @@ interactive_print() {
   success "Selected duplex mode: $duplex_mode_display"
   echo ""
   
-  # Step 6: Get number of copies (NEW)
+  # Step 6: Get paper size
+  echo "Select paper size:"
+  echo "  1. Letter"
+  echo "  2. Legal"
+  echo "  3. A4"
+  echo "  4. A3"
+  echo "  5. A5"
+  echo "  6. Tabloid"
+  echo ""
+  read -p "Enter choice (1-6): " paper_size_choice
+  
+  if [[ ! "$paper_size_choice" =~ ^[1-6]$ ]]; then
+    error "Invalid selection. Please enter a number between 1 and 6."
+  fi
+  
+  local paper_size="${PAPER_SIZES[$paper_size_choice]}"
+  echo ""
+  success "Selected paper size: $paper_size"
+  echo ""
+  
+  # Step 7: Get collate option
+  echo "Collate pages?"
+  echo "  1. Yes"
+  echo "  2. No"
+  echo ""
+  read -p "Enter choice (1 or 2): " collate_choice
+  
+  if [[ ! "$collate_choice" =~ ^[1-2]$ ]]; then
+    error "Invalid selection. Please enter 1 or 2."
+  fi
+  
+  local collate="yes"
+  local collate_display="Yes"
+  if [[ "$collate_choice" == "2" ]]; then
+    collate="no"
+    collate_display="No"
+  fi
+  echo ""
+  success "Selected collate: $collate_display"
+  echo ""
+  
+  # Step 8: Get both sides option
+  echo "Print on both sides?"
+  echo "  1. Yes"
+  echo "  2. No"
+  echo ""
+  read -p "Enter choice (1 or 2): " both_sides_choice
+  
+  if [[ ! "$both_sides_choice" =~ ^[1-2]$ ]]; then
+    error "Invalid selection. Please enter 1 or 2."
+  fi
+  
+  local both_sides="yes"
+  local both_sides_display="Yes"
+  if [[ "$both_sides_choice" == "2" ]]; then
+    both_sides="no"
+    both_sides_display="No"
+    # Override duplex mode to one-sided
+    duplex_mode="one-sided"
+    duplex_mode_display="Single-sided"
+  fi
+  echo ""
+  success "Selected both sides: $both_sides_display"
+  echo ""
+  
+  # Step 9: Get number of copies
   read -p "Enter number of copies: " copies
   
   if ! [[ "$copies" =~ ^[0-9]+$ ]] || [ "$copies" -lt 1 ]; then
@@ -246,22 +541,25 @@ interactive_print() {
   success "Selected copies: $copies"
   echo ""
   
-  # Step 7: Show summary
+  # Step 10: Show summary
   local file_size=$(get_file_size "$file_path")
   
   echo "📋 Print Job Summary:"
   echo "$(printf '─%.0s' {1..50})"
-  echo "Printer:     $selected_printer"
-  echo "File Path:   $file_path"
-  echo "File Name:   $(basename "$file_path")"
-  echo "File Size:   ${file_size} KB"
-  echo "Color Mode:  $color_mode_display"
-  echo "Duplex Mode: $duplex_mode_display"
-  echo "Copies:      $copies"
+  echo "Printer:       $selected_printer"
+  echo "File Path:     $file_path"
+  echo "File Name:     $(basename "$file_path")"
+  echo "File Size:     ${file_size} KB"
+  echo "Color Mode:    $color_mode_display"
+  echo "Duplex Mode:   $duplex_mode_display"
+  echo "Paper Size:    $paper_size"
+  echo "Collate:       $collate_display"
+  echo "Both Sides:    $both_sides_display"
+  echo "Copies:        $copies"
   echo "$(printf '─%.0s' {1..50})"
   echo ""
   
-  # Step 8: Confirmation
+  # Step 11: Confirmation
   read -p "Proceed with print job? (y/N): " confirm
   
   if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
@@ -270,15 +568,24 @@ interactive_print() {
     exit 0
   fi
   
-  # Step 9: Submit print job (with error handling)
+  # Step 12: Submit print job (with error handling)
   echo ""
   info "Submitting print job..."
   
-  local lp_options="-o sides=${duplex_mode} -o media=A4 -n ${copies}"
+  local lp_options="-o sides=${duplex_mode} -o media=${paper_size}"
+  
   if [[ "$color_mode" == "color" ]]; then
     lp_options="${lp_options} -o print-color-mode=color"
   fi
-  
+
+  if [[ "$collate" == "yes" ]]; then
+    lp_options="${lp_options} -o collate=true"
+  else
+    lp_options="${lp_options} -o collate=false"
+  fi
+
+  lp_options="${lp_options} -n ${copies}"
+
   # Execute lp command with error handling
   if lp $lp_options -d "$selected_printer" "$file_path" 2>/dev/null; then
     echo ""
@@ -287,9 +594,10 @@ interactive_print() {
     echo "📄 File: $(basename "$file_path")"
     echo "📋 Copies: $copies"
     echo "🔄 Duplex: $duplex_mode_display"
+    echo "📑 Collate: $collate_display"
     echo ""
   else
-    local error_msg="Failed to submit print job for file: $(basename "$file_path") to printer: $selected_printer. Duplex: $duplex_mode, Copies: $copies, Color: $color_mode_display"
+    local error_msg="Failed to submit print job for file: $(basename "$file_path") to printer: $selected_printer. Duplex: $duplex_mode_display, Copies: $copies, Color: $color_mode_display, Collate: $collate_display"
     log_error "$error_msg"
     error "Failed to submit print job. Check printer status and try again. Error logged to $LOG_DIR"
   fi
@@ -302,18 +610,30 @@ interactive_print() {
 main() {
   init_logging
   
-  case "${1:-}" in
+  if [[ $# -lt 1 ]]; then
+    show_help
+    return
+  fi
+
+  case "$1" in
     print)
-      interactive_print
+      if [[ $# -gt 1 ]] && [[ "$2" == "--no-interactive" ]]; then
+        # Remove 'print' and '--no-interactive' from arguments
+        shift 2
+        non_interactive_print "$@"
+      else
+        # Check if any flags are provided
+        if [[ $# -gt 1 ]]; then
+          error "Unknown option: $2. Did you mean 'print --no-interactive'?"
+        fi
+        interactive_print
+      fi
       ;;
     help|-h|--help)
       show_help
       ;;
     version|-v|--version)
       echo "println v$VERSION"
-      ;;
-    "")
-      show_help
       ;;
     *)
       error "Unknown command: $1. Use 'println help' for usage information."

@@ -4,6 +4,7 @@
 # PrintLN - Bash CLI Print Tool (Bash Implementation)
 # A lightweight CLI tool for printing documents to network printers
 # with an interactive workflow
+# Version: 2.0.0 - With duplex, copies, and error logging
 ##############################################################################
 
 set -euo pipefail
@@ -17,7 +18,8 @@ NC='\033[0m' # No Color
 
 # Supported file types
 SUPPORTED_TYPES=("pdf" "txt" "md" "csv" "docx" "png" "jpeg" "jpg")
-VERSION="1.0.0"
+VERSION="2.0.0"
+LOG_DIR="${HOME}/println_logs"
 
 ##############################################################################
 # Helper Functions
@@ -42,6 +44,22 @@ info() {
 # Display warning message
 warning() {
   echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+# Initialize logging directory
+init_logging() {
+  if [[ ! -d "$LOG_DIR" ]]; then
+    mkdir -p "$LOG_DIR"
+  fi
+}
+
+# Log error with timestamp
+log_error() {
+  local error_msg=$1
+  local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  local log_file="${LOG_DIR}/println-error-log-${timestamp}.log"
+  
+  echo "[${timestamp}] ERROR: $error_msg" >> "$log_file"
 }
 
 # Get list of available printers
@@ -111,8 +129,10 @@ Interactive Workflow:
   1. Select printer from available system printers
   2. Enter absolute file path to print
   3. Choose color mode (Black & White or Color)
-  4. Review print job summary
-  5. Confirm to submit print job
+  4. Select duplex mode (Single-sided, Double-sided long-edge, Double-sided short-edge)
+  5. Enter number of copies
+  6. Review print job summary
+  7. Confirm to submit print job
 
 For more information, visit: https://github.com/live-by-unix/println
 EOF
@@ -191,7 +211,42 @@ interactive_print() {
   success "Selected color mode: $color_mode_display"
   echo ""
   
-  # Step 5: Show summary
+  # Step 5: Get duplex mode (NEW)
+  echo "Select duplex mode:"
+  echo "  1. Single-sided"
+  echo "  2. Double-sided (long-edge)"
+  echo "  3. Double-sided (short-edge)"
+  echo ""
+  read -p "Enter choice (1, 2, or 3): " duplex_choice
+  
+  if [[ ! "$duplex_choice" =~ ^[1-3]$ ]]; then
+    error "Invalid selection. Please enter 1, 2, or 3."
+  fi
+  
+  local duplex_mode="one-sided"
+  local duplex_mode_display="Single-sided"
+  if [[ "$duplex_choice" == "2" ]]; then
+    duplex_mode="two-sided-long-edge"
+    duplex_mode_display="Double-sided (long-edge)"
+  elif [[ "$duplex_choice" == "3" ]]; then
+    duplex_mode="two-sided-short-edge"
+    duplex_mode_display="Double-sided (short-edge)"
+  fi
+  echo ""
+  success "Selected duplex mode: $duplex_mode_display"
+  echo ""
+  
+  # Step 6: Get number of copies (NEW)
+  read -p "Enter number of copies: " copies
+  
+  if ! [[ "$copies" =~ ^[0-9]+$ ]] || [ "$copies" -lt 1 ]; then
+    error "Invalid number of copies. Please enter a positive integer."
+  fi
+  echo ""
+  success "Selected copies: $copies"
+  echo ""
+  
+  # Step 7: Show summary
   local file_size=$(get_file_size "$file_path")
   
   echo "📋 Print Job Summary:"
@@ -201,10 +256,12 @@ interactive_print() {
   echo "File Name:   $(basename "$file_path")"
   echo "File Size:   ${file_size} KB"
   echo "Color Mode:  $color_mode_display"
+  echo "Duplex Mode: $duplex_mode_display"
+  echo "Copies:      $copies"
   echo "$(printf '─%.0s' {1..50})"
   echo ""
   
-  # Step 6: Confirmation
+  # Step 8: Confirmation
   read -p "Proceed with print job? (y/N): " confirm
   
   if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
@@ -213,25 +270,28 @@ interactive_print() {
     exit 0
   fi
   
-  # Step 7: Submit print job
+  # Step 9: Submit print job (with error handling)
   echo ""
   info "Submitting print job..."
   
-  local lp_options=""
-  if [[ "$color_mode" == "bw" ]]; then
-    lp_options="-o sides=two-sided-long-edge -o media=A4"
-  else
-    lp_options="-o sides=two-sided-long-edge -o media=A4 -o print-color-mode=color"
+  local lp_options="-o sides=${duplex_mode} -o media=A4 -n ${copies}"
+  if [[ "$color_mode" == "color" ]]; then
+    lp_options="${lp_options} -o print-color-mode=color"
   fi
   
+  # Execute lp command with error handling
   if lp $lp_options -d "$selected_printer" "$file_path" 2>/dev/null; then
     echo ""
     success "Print job submitted successfully!"
     echo "📌 Printer: $selected_printer"
     echo "📄 File: $(basename "$file_path")"
+    echo "📋 Copies: $copies"
+    echo "🔄 Duplex: $duplex_mode_display"
     echo ""
   else
-    error "Failed to submit print job. Check printer status and try again."
+    local error_msg="Failed to submit print job for file: $(basename "$file_path") to printer: $selected_printer. Duplex: $duplex_mode, Copies: $copies, Color: $color_mode_display"
+    log_error "$error_msg"
+    error "Failed to submit print job. Check printer status and try again. Error logged to $LOG_DIR"
   fi
 }
 
@@ -240,6 +300,8 @@ interactive_print() {
 ##############################################################################
 
 main() {
+  init_logging
+  
   case "${1:-}" in
     print)
       interactive_print

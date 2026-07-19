@@ -7,20 +7,47 @@ A lightweight, production-ready Bash CLI tool for printing documents to network 
 ## Features
 
 - 🖨️ **System Printer Integration** - Automatically detects available printers via CUPS
-- 📄 **Multiple File Formats** - Supports PDF, TXT, MD, CSV, DOCX, PNG, and JPEG
+- 📄 **Multiple File Formats** - Supports PDF, TXT, MD, Markdown, CSV, DOCX, PNG, and JPEG
+- 🔄 **Automatic Document Conversion** - Converts DOCX to PDF and Markdown to PDF automatically
 - 🎨 **Color Mode Selection** - Choose between Black & White and Color printing
 - 📑 **Advanced Print Options** - Duplex modes, collation, paper size selection
 - ✅ **Interactive & Non-Interactive Modes** - Choose your workflow
-- 🚀 **Lightweight** - Pure Bash, no external dependencies
+- 🚀 **Lightweight** - Pure Bash, no external dependencies (beyond CUPS)
 - 💻 **Cross-Platform** - Works on macOS, Linux, and Unix systems
+- 🔧 **Broad Bash Support** - Compatible with Bash 3.2+ (including older systems)
 
 ## Requirements
 
-- Bash 4.0+
+### Core Requirements
+- Bash 3.2+ (tested on 3.2, 4.0+, and 5.0+)
 - CUPS (Common Unix Printing System) installed and configured
 - `lp` command-line utility (comes with CUPS)
 - `lpstat` utility for printer detection
-- `bc` for calculations (standard on most systems)
+
+### Optional Requirements (for file conversion)
+- **For DOCX support**: LibreOffice or OpenOffice
+  ```bash
+  # macOS
+  brew install libreoffice
+  
+  # Ubuntu/Debian
+  sudo apt-get install libreoffice
+  
+  # RHEL/CentOS
+  sudo yum install libreoffice
+  ```
+
+- **For Markdown support**: Pandoc (recommended) or Markdown
+  ```bash
+  # macOS
+  brew install pandoc
+  
+  # Ubuntu/Debian
+  sudo apt-get install pandoc
+  
+  # RHEL/CentOS
+  sudo yum install pandoc
+  ```
 
 ## Installation 
 
@@ -54,7 +81,7 @@ source ~/.bashrc  # or source ~/.zshrc
 println -v
 
 # Output:
-# println v3.0.0
+# println v3.1.0
 ```
 
 ## Usage
@@ -160,25 +187,14 @@ Enter choice (1 or 2): 1
 ✅ Selected collate: Yes
 ```
 
-### Step 7: Select Both Sides Option
-```
-Print on both sides?
-  1. Yes
-  2. No
-
-Enter choice (1 or 2): 1
-
-✅ Selected both sides: Yes
-```
-
-### Step 8: Enter Number of Copies
+### Step 7: Enter Number of Copies
 ```
 Enter number of copies: 2
 
 ✅ Selected copies: 2
 ```
 
-### Step 9: Review Summary
+### Step 8: Review Summary
 ```
 📋 Print Job Summary:
 ──────────────────────────────────────────────
@@ -190,12 +206,11 @@ Color Mode:    Black & White
 Duplex Mode:   Double-sided (long-edge)
 Paper Size:    A4
 Collate:       Yes
-Both Sides:    Yes
 Copies:        2
 ──────────────────────────────────────────────
 ```
 
-### Step 10: Confirm & Submit
+### Step 9: Confirm & Submit
 ```
 Proceed with print job? (y/N): y
 
@@ -241,33 +256,45 @@ println print --no-interactive [OPTIONS]
 
 ### Non-Interactive Examples
 
-**Example 1: Simple Color Print**
+**Example 1: Simple Color Print (PDF)**
 ```bash
 println print --no-interactive -p "Office_Printer" -f "/home/user/report.pdf" -c color
 ```
 
-**Example 2: Multi-Copy with Custom Paper Size**
+**Example 2: Print DOCX Document (auto-converts to PDF)**
+```bash
+println print --no-interactive -p "HP_LaserJet" -f "/home/user/document.docx" -n 2 -s 2
+# Automatically converts DOCX to PDF, prints 2 copies on Legal-sized paper
+```
+
+**Example 3: Print Markdown File (auto-converts to PDF)**
+```bash
+println print --no-interactive -p "Office_Printer" -f "/home/user/README.md" -c color
+# Automatically converts Markdown to PDF and prints in color
+```
+
+**Example 4: Multi-Copy with Custom Paper Size**
 ```bash
 println print --no-interactive -p "HP_LaserJet" -f "/home/user/document.pdf" -n 3 -s 2
 # Prints 3 copies on Legal-sized paper
 ```
 
-**Example 3: No Collation, Single-Sided**
+**Example 5: No Collation, Single-Sided**
 ```bash
 println print --no-interactive -p "Brother" -f "/home/user/file.pdf" --collate no --both-sides no
 ```
 
-**Example 4: Double-Sided Short-Edge with Custom Settings**
+**Example 6: Double-Sided Short-Edge with Custom Settings**
 ```bash
 println print --no-interactive -p "Canon" -f "/home/user/image.png" -d short-edge -n 2 -c color --collate yes
 ```
 
-**Example 5: A3 Paper, Color, 5 Copies**
+**Example 7: A3 Paper, Color, 5 Copies**
 ```bash
 println print --no-interactive -p "Office_Printer" -f "/home/user/poster.pdf" -s 4 -c color -n 5
 ```
 
-**Example 6: Automation Script - Batch Print Multiple Files**
+**Example 8: Automation Script - Batch Print Multiple Files**
 ```bash
 #!/bin/bash
 for file in /path/to/documents/*.pdf; do
@@ -281,10 +308,28 @@ for file in /path/to/documents/*.pdf; do
 done
 ```
 
+**Example 9: Batch Print DOCX Files (auto-convert)**
+```bash
+#!/bin/bash
+for file in /path/to/reports/*.docx; do
+  println print --no-interactive \
+    -p "Office_Printer" \
+    -f "$file" \
+    -c bw \
+    -n 1 \
+    -d long-edge
+done
+```
+
 ## Supported File Types
 
-- **Documents**: PDF, TXT, MD (Markdown), CSV, DOCX (Word)
+### Direct Printing
+- **Documents**: PDF, TXT, CSV
 - **Images**: PNG, JPEG
+
+### Auto-Conversion to PDF
+- **Office Documents**: DOCX (Word) - requires LibreOffice
+- **Markdown**: MD, Markdown - requires Pandoc
 
 ## Supported Paper Sizes
 
@@ -320,7 +365,7 @@ done
 **Solution:**
 - Verify file type is in the supported list: PDF, TXT, MD, CSV, DOCX, PNG, JPEG
 - Ensure file is not corrupted
-- Check file extension is lowercase
+- Check file extension is lowercase (or it will be normalized)
 
 ### "Printer not found" in non-interactive mode
 **Solution:**
@@ -335,11 +380,60 @@ done
 - Ensure you have permission to print to the selected printer
 - Try printing a test page: `lp -d printer_name /etc/hosts`
 
-### You get a error related to a old shell. 
-**Solution**
-- Install a new shell
-- Change the shebang line to your needed interpreter.
+### DOCX conversion fails ("Failed to convert DOCX to PDF")
+**Solution:**
+- Verify LibreOffice is installed: `which libreoffice` or `which soffice`
+- Install LibreOffice:
+  ```bash
+  # macOS
+  brew install libreoffice
+  
+  # Ubuntu/Debian
+  sudo apt-get install libreoffice
+  
+  # RHEL/CentOS
+  sudo yum install libreoffice
+  ```
+- Ensure DOCX file is not corrupted
+- Try converting manually: `libreoffice --headless --convert-to pdf document.docx`
 
+### Markdown conversion fails ("Failed to convert Markdown to PDF")
+**Solution:**
+- Verify Pandoc is installed: `which pandoc`
+- Install Pandoc:
+  ```bash
+  # macOS
+  brew install pandoc
+  
+  # Ubuntu/Debian
+  sudo apt-get install pandoc
+  
+  # RHEL/CentOS
+  sudo yum install pandoc
+  ```
+- Try converting manually: `pandoc README.md -o README.pdf`
+
+### Old Bash compatibility issues
+**Solution:**
+- Verify your Bash version: `bash --version`
+- If using Bash < 3.2, update Bash:
+  ```bash
+  # macOS
+  brew install bash
+  
+  # Ubuntu/Debian
+  sudo apt-get install bash
+  
+  # RHEL/CentOS
+  sudo yum install bash
+  ```
+- Change the shebang line in the `println` script if needed:
+  ```bash
+  # For systems with different shell location
+  #!/usr/bin/env bash
+  # or
+  #!/bin/sh  # For POSIX shell compatibility (limited features)
+  ```
 
 ## Advanced: Viewing & Managing Print Queue
 
@@ -357,6 +451,23 @@ cancel job_id
 # Cancel all jobs for a printer
 cancel -P printer_name
 ```
+
+## Version History
+
+### v3.1.0 - Current
+- ✨ Added DOCX support with automatic conversion to PDF
+- ✨ Added Markdown support with automatic conversion to PDF
+- 🔧 Improved Bash compatibility (3.2+, removed `bc` dependency)
+- 🐛 Fixed duplicate "both sides" prompts in interactive mode
+- 🐛 Fixed interactive workflow order (copies prompt before summary)
+- 🔧 Better error handling and validation
+- 🔧 Automatic cleanup of temporary conversion files
+- 📚 Updated documentation with conversion examples
+
+### v3.0.0
+- Initial release with duplex, copies, collate, and paper size support
+- Interactive and non-interactive modes
+- Basic file format support (PDF, TXT, MD, CSV, PNG, JPEG)
 
 ## Installation Updates & Maintenance
 
@@ -424,24 +535,26 @@ rm -rf /path/to/println
 # Remove all PrintLN logs
 rm -rf ~/println_logs
 ```
-Then reinstall. 
 
 ## Architecture
 
 ### Pure Bash Implementation
-- **No external dependencies** beyond CUPS (standard on macOS/Linux)
-- **Fast execution** - instant startup
+- **Minimal external dependencies** - only requires CUPS and standard Unix utilities
+- **Fast execution** - instant startup, no interpreters to load
 - **Portable** - works across different Unix-like systems
-- **Maintainable** - single script, easy to understand
+- **Maintainable** - single script, easy to understand and modify
+- **Backward compatible** - supports older Bash versions (3.2+)
 
 ### Key Components
 1. **Printer Detection** - Uses `lpstat` to list available printers
 2. **File Validation** - Checks file existence and supported type
-3. **Interactive Prompts** - Simple `read` commands for user input
-4. **Non-Interactive Processing** - Argument parsing for automated workflows
-5. **Print Submission** - Uses `lp` command with CUPS options
-6. **Error Handling** - Comprehensive validation and user feedback
-7. **Logging** - Error logs stored in `~/println_logs/`
+3. **Document Conversion** - Converts DOCX/Markdown to PDF automatically
+4. **Interactive Prompts** - Simple `read` commands for user input
+5. **Non-Interactive Processing** - Argument parsing for automated workflows
+6. **Print Submission** - Uses `lp` command with CUPS options
+7. **Error Handling** - Comprehensive validation and user feedback
+8. **Logging** - Error logs stored in `~/println_logs/`
+9. **Cleanup** - Automatic removal of temporary conversion files
 
 ## Configuration
 
@@ -452,6 +565,19 @@ PrintLN uses system printer settings by default. Print jobs are submitted with:
 - **Collate**: User-selected collation (default: Enabled)
 
 To customize print options, edit the `lp_options` variable in the `println` script or use command-line options in non-interactive mode.
+
+## Performance & Conversion
+
+### File Conversion Workflow
+- **DOCX files**: Converted to PDF via LibreOffice in a temporary directory
+- **Markdown files**: Converted to PDF via Pandoc in a temporary directory
+- **Temporary files**: Automatically cleaned up after printing
+- **Conversion errors**: Clear error messages guide you to install required tools
+
+### Performance Notes
+- First-time conversion may take 2-5 seconds (LibreOffice startup)
+- Subsequent prints are faster due to caching
+- Large documents (100+ MB) may require more conversion time
 
 ## License
 

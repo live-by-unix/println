@@ -21,10 +21,8 @@ A lightweight, production-ready Bash CLI tool for printing documents to network 
 - `lpstat` utility for printer detection
 - `bc` for calculations (standard on most systems)
 
-## Installation
-
-### Quick Install
-
+## Installation (Advanced)
+**If you have homebrew & prefer a quicker installer, read Quick Installation**
 ```bash
 # Clone the repository
 git clone https://github.com/live-by-unix/println.git
@@ -40,8 +38,45 @@ If you want to use it as a command but don't have sudo, go to your `./bashrc` or
 
 ```bash
 alias println="/path/to/your/println"
+``````bash
+# Clone the repository
+git clone https://github.com/live-by-unix/println.git
+cd println
+
+# Make the script executable
+chmod +x println
+
+# Optional: Install globally
+sudo cp println /usr/local/bin/println # Do this IN the println dir.
 ```
-Also, if you prefer to clone a release, go ahead.
+If you want to use it as a command but don't have sudo, go to your `./bashrc` or `./zshrc` and put this:
+
+```bash
+alias println="/path/to/your/println"
+```
+If you prefer to clone a release go ahead.   
+
+### Quick Install
+To quickly install run:   
+```bash
+brew tap live-by-unix/println
+brew install println
+```
+If it says "Tap not trusted", run
+```bash
+brew trust --formula live-by-unix/println/printlb
+```
+if that fails run:   
+```bash
+brew trust live-by-unix/println
+```
+
+and rerun:   
+```bash
+brew install printlb
+```
+
+
 ### Verify Installation
 
 ```bash

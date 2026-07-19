@@ -335,6 +335,12 @@ done
 - Ensure you have permission to print to the selected printer
 - Try printing a test page: `lp -d printer_name /etc/hosts`
 
+### You get a error related to a old shell. 
+**Solution**
+- Install a new shell
+- Change the shebang line to your needed interpreter.
+
+
 ## Advanced: Viewing & Managing Print Queue
 
 Check the status of print jobs:

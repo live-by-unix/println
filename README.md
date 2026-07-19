@@ -36,7 +36,7 @@ chmod +x println
 # Optional: Install globally
 sudo cp println /usr/local/bin/println # Do this IN the println dir.
 ```
-If you want to use it as a command but don't have sudo, go to your ./bashrc or ./zshrc and put this:
+If you want to use it as a command but don't have sudo, go to your `./bashrc` or `./zshrc` and put this:
 
 ```bash
 alias println="/path/to/your/println"

@@ -4,7 +4,7 @@
 # PrintLN - Bash CLI Print Tool (Bash Implementation)
 # A lightweight CLI tool for printing documents to network printers
 # with an interactive workflow and non-interactive mode
-# Version: 3.1.0 - DOCX/Markdown support, older Bash compatibility, bug fixes
+# Version: 4.0.0 - DOCX/Markdown support, older Bash compatibility, bug fixes, updated documentation
 ##############################################################################
 
 set -euo pipefail

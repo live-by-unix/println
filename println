@@ -23,7 +23,7 @@ SUPPORTED_TYPES=("pdf" "txt" "md" "markdown" "csv" "docx" "png" "jpeg" "jpg")
 PAPER_SIZES=("Letter" "Legal" "A4" "A3" "A5" "Tabloid")
 
 
-VERSION="3.1.0"
+VERSION="4.0.0"
 LOG_DIR="${HOME}/println_logs"
 TEMP_DIR=""
 

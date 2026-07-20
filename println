@@ -20,14 +20,8 @@ NC='\033[0m' # No Color
 SUPPORTED_TYPES=("pdf" "txt" "md" "markdown" "csv" "docx" "png" "jpeg" "jpg")
 
 # Paper sizes
-declare -A PAPER_SIZES=(
-  [1]="Letter"
-  [2]="Legal"
-  [3]="A4"
-  [4]="A3"
-  [5]="A5"
-  [6]="Tabloid"
-)
+PAPER_SIZES=("Letter" "Legal" "A4" "A3" "A5" "Tabloid")
+
 
 VERSION="3.1.0"
 LOG_DIR="${HOME}/println_logs"

@@ -479,11 +479,11 @@ If you installed PrintLN globally with `sudo cp`:
 # Delete your println repository directory
 rm -rf path/to/println
 
-# CD into repo
-cd path/to/println
-
 # Pull the latest changes
 git clone https://github.com/live-by-unix/println
+
+# CD into repo
+cd path/to/println
 
 # Update the global installation
 sudo cp println /usr/local/bin/println
@@ -495,41 +495,18 @@ println -v
 If you used an alias instead:
 
 ```bash
-# Navigate to your println repository directory
-cd /path/to/println
 
 # Pull the latest changes
-git pull origin main
+rm -rf /path/to/println
+git clone https://github.com/live-by-unix/println
+
+# Double check that the alias links correctly
 
 # The alias automatically points to the updated version
+
+
 # Verify the update
 println -v
-```
-
-### Uninstalling PrintLN
-
-**If installed globally:**
-
-```bash
-# Remove from /usr/local/bin
-sudo rm /usr/local/bin/println
-
-# Optionally, remove the cloned repository
-rm -rf /path/to/println
-```
-
-**If using an alias:**
-
-```bash
-# Remove the alias from ~/.bashrc or ~/.zshrc
-# Edit the file and delete this line:
-# alias println="/path/to/your/println"
-
-# Then reload your shell
-source ~/.bashrc  # or source ~/.zshrc
-
-# Optionally, remove the cloned repository
-rm -rf /path/to/println
 ```
 
 **Remove logs (optional):**

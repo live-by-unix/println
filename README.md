@@ -476,11 +476,14 @@ cancel -P printer_name
 If you installed PrintLN globally with `sudo cp`:
 
 ```bash
-# Navigate to your println repository directory
-cd /path/to/println
+# Delete your println repository directory
+rm -rf path/to/println
+
+# CD into repo
+cd path/to/println
 
 # Pull the latest changes
-git pull origin main
+git clone https://github.com/live-by-unix/println
 
 # Update the global installation
 sudo cp println /usr/local/bin/println
